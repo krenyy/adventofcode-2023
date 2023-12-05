@@ -40,19 +40,23 @@ fn main() {
             sets: y.clone(),
         };
 
-        let mut valid = true;
-        for game_set in game.sets {
-            if *game_set.get("red").unwrap_or(&0) > 12
-                || *game_set.get("green").unwrap_or(&0) > 13
-                || *game_set.get("blue").unwrap_or(&0) > 14
-            {
-                valid = false;
-                break;
-            }
-        }
-        if valid {
-            sum += game.id;
-        }
+        let tuples = game
+            .sets
+            .into_iter()
+            .map(|x| {
+                (
+                    *x.get("red").unwrap_or(&0),
+                    *x.get("green").unwrap_or(&0),
+                    *x.get("blue").unwrap_or(&0),
+                )
+            })
+            .collect::<Vec<_>>();
+
+        let r_max = tuples.iter().map(|x| x.0).max().unwrap();
+        let g_max = tuples.iter().map(|x| x.1).max().unwrap();
+        let b_max = tuples.iter().map(|x| x.2).max().unwrap();
+
+        sum += r_max * g_max * b_max;
     }
 
     println!("{sum}");
