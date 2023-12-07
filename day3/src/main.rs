@@ -1,44 +1,19 @@
-fn asdf(start: Option<&(usize, usize)>, end: Option<&(usize, usize)>, lines: &[Vec<char>]) -> u128 {
-    if start.is_none() || end.is_none() {
-        return 0;
-    }
-    let start = start.unwrap();
-    let end = end.unwrap();
-    let k_range = (end.0 as i64 - 1)..=(end.0 as i64 + 1);
-    let l_range = (end.1 as i64 - (end.1 - start.1) as i64 - 1)..=(end.1 as i64 + 1);
+fn num(line: &[char], pos: usize) -> u128 {
+    let mut start = pos;
+    let mut end = pos;
 
-    let mut is_part = false;
-    'a: for k in k_range.clone() {
-        for l in l_range.clone() {
-            if (k != *k_range.start()
-                && k != *k_range.end()
-                && l != *l_range.start()
-                && l != *l_range.end())
-                || k < 0
-                || k >= lines.len() as i64
-                || l < 0
-                || l >= lines[k as usize].len() as i64
-            {
-                continue;
-            }
-            if lines[k as usize][l as usize] != '.' {
-                is_part = true;
-                break 'a;
-            }
-        }
+    while start > 0 && line[start - 1].is_numeric() {
+        start -= 1;
+    }
+    while end < line.len() - 1 && line[end + 1].is_numeric() {
+        end += 1;
     }
 
-    if is_part {
-        let num = lines[start.0][start.1..=end.1]
-            .to_vec()
-            .into_iter()
-            .collect::<String>()
-            .parse::<u128>()
-            .unwrap();
-        return num;
-    }
-
-    return 0;
+    line[start..=end]
+        .into_iter()
+        .collect::<String>()
+        .parse::<u128>()
+        .unwrap()
 }
 
 fn main() {
@@ -51,21 +26,119 @@ fn main() {
 
     let mut sum = 0;
     for i in 0..lines.len() {
-        let mut start = None;
-        let mut end = None;
         for j in 0..lines[i].len() {
-            if lines[i][j].is_numeric() {
-                if start.is_none() {
-                    start = Some((i, j));
-                }
-                end = Some((i, j));
+            if lines[i][j] != '*' {
                 continue;
             }
-            sum += asdf(start.as_ref(), end.as_ref(), &lines);
-            start = None;
-            end = None;
+            sum += match (
+                lines
+                    .get(i - 1)
+                    .and_then(|x| x.get(j - 1))
+                    .map(|x| x.is_numeric()),
+                lines
+                    .get(i - 1)
+                    .and_then(|x| x.get(j))
+                    .map(|x| x.is_numeric()),
+                lines
+                    .get(i - 1)
+                    .and_then(|x| x.get(j + 1))
+                    .map(|x| x.is_numeric()),
+                lines
+                    .get(i)
+                    .and_then(|x| x.get(j - 1))
+                    .map(|x| x.is_numeric()),
+                lines
+                    .get(i)
+                    .and_then(|x| x.get(j + 1))
+                    .map(|x| x.is_numeric()),
+                lines
+                    .get(i + 1)
+                    .and_then(|x| x.get(j - 1))
+                    .map(|x| x.is_numeric()),
+                lines
+                    .get(i + 1)
+                    .and_then(|x| x.get(j))
+                    .map(|x| x.is_numeric()),
+                lines
+                    .get(i + 1)
+                    .and_then(|x| x.get(j + 1))
+                    .map(|x| x.is_numeric()),
+            ) {
+                (Some(true), Some(false), Some(true), _, _, _, _, _) => {
+                    num(&lines[i - 1], j - 1) * num(&lines[i - 1], j + 1)
+                }
+                (_, _, _, _, _, Some(true), Some(false), Some(true)) => {
+                    num(&lines[i + 1], j - 1) * num(&lines[i + 1], j + 1)
+                }
+                (_, _, _, Some(true), Some(true), _, _, _) => {
+                    num(&lines[i], j - 1) * num(&lines[i], j + 1)
+                }
+                (Some(true), _, _, Some(true), _, _, _, _) => {
+                    num(&lines[i - 1], j - 1) * num(&lines[i], j - 1)
+                }
+                (Some(true), _, _, _, Some(true), _, _, _) => {
+                    num(&lines[i - 1], j - 1) * num(&lines[i], j + 1)
+                }
+                (Some(true), _, _, _, _, Some(true), _, _) => {
+                    num(&lines[i - 1], j - 1) * num(&lines[i + 1], j - 1)
+                }
+                (Some(true), _, _, _, _, _, Some(true), _) => {
+                    num(&lines[i - 1], j - 1) * num(&lines[i + 1], j)
+                }
+                (Some(true), _, _, _, _, _, _, Some(true)) => {
+                    num(&lines[i - 1], j - 1) * num(&lines[i + 1], j + 1)
+                }
+                (_, Some(true), _, Some(true), _, _, _, _) => {
+                    num(&lines[i - 1], j) * num(&lines[i], j - 1)
+                }
+                (_, Some(true), _, _, Some(true), _, _, _) => {
+                    num(&lines[i - 1], j) * num(&lines[i], j + 1)
+                }
+                (_, Some(true), _, _, _, Some(true), _, _) => {
+                    num(&lines[i - 1], j) * num(&lines[i + 1], j - 1)
+                }
+                (_, Some(true), _, _, _, _, Some(true), _) => {
+                    num(&lines[i - 1], j) * num(&lines[i + 1], j)
+                }
+                (_, Some(true), _, _, _, _, _, Some(true)) => {
+                    num(&lines[i - 1], j) * num(&lines[i + 1], j + 1)
+                }
+                (_, _, Some(true), Some(true), _, _, _, _) => {
+                    num(&lines[i - 1], j + 1) * num(&lines[i], j - 1)
+                }
+                (_, _, Some(true), _, Some(true), _, _, _) => {
+                    num(&lines[i - 1], j + 1) * num(&lines[i], j + 1)
+                }
+                (_, _, Some(true), _, _, Some(true), _, _) => {
+                    num(&lines[i - 1], j + 1) * num(&lines[i + 1], j - 1)
+                }
+                (_, _, Some(true), _, _, _, Some(true), _) => {
+                    num(&lines[i - 1], j + 1) * num(&lines[i + 1], j)
+                }
+                (_, _, Some(true), _, _, _, _, Some(true)) => {
+                    num(&lines[i - 1], j + 1) * num(&lines[i + 1], j + 1)
+                }
+                (_, _, _, Some(true), _, Some(true), _, _) => {
+                    num(&lines[i], j - 1) * num(&lines[i + 1], j - 1)
+                }
+                (_, _, _, Some(true), _, _, Some(true), _) => {
+                    num(&lines[i], j - 1) * num(&lines[i + 1], j)
+                }
+                (_, _, _, Some(true), _, _, _, Some(true)) => {
+                    num(&lines[i], j - 1) * num(&lines[i + 1], j + 1)
+                }
+                (_, _, _, _, Some(true), Some(true), _, _) => {
+                    num(&lines[i], j + 1) * num(&lines[i + 1], j - 1)
+                }
+                (_, _, _, _, Some(true), _, Some(true), _) => {
+                    num(&lines[i], j + 1) * num(&lines[i + 1], j)
+                }
+                (_, _, _, _, Some(true), _, _, Some(true)) => {
+                    num(&lines[i], j + 1) * num(&lines[i + 1], j + 1)
+                }
+                _ => 0,
+            }
         }
-        sum += asdf(start.as_ref(), end.as_ref(), &lines);
     }
 
     println!("{sum}");
